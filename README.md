@@ -2,6 +2,12 @@
 
 A modern, responsive weekly planner application built with Vue.js, PHP, and MySQL. Features environment-based configuration, enhanced security, and comprehensive task management.
 
+## 🌐 Live Demo
+
+**[View Live Demo →](http://weekly-planner.kerwindows.com)**
+
+Try the app instantly without any setup!
+
 ## Features
 
 - **User Authentication**: Secure JWT-based login and registration with rate limiting
