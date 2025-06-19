@@ -1,0 +1,2975 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weekly Planner</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+      :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --secondary: #10b981;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --bg-primary: #ffffff;
+        --bg-secondary: #f9fafb;
+        --bg-tertiary: #f3f4f6;
+        --text-primary: #111827;
+        --text-secondary: #6b7280;
+        --border: #e5e7eb;
+        --shadow: rgba(0, 0, 0, 0.1);
+      }
+
+      [data-theme="dark"] {
+        --primary: #6366f1;
+        --primary-hover: #4f46e5;
+        --secondary: #34d399;
+        --danger: #f87171;
+        --warning: #fbbf24;
+        --bg-primary: #1f2937;
+        --bg-secondary: #111827;
+        --bg-tertiary: #374151;
+        --text-primary: #f9fafb;
+        --text-secondary: #d1d5db;
+        --border: #4b5563;
+        --shadow: rgba(0, 0, 0, 0.3);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        line-height: 1.6;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      /* Authentication Styles */
+      .auth-container {
+        max-width: 400px;
+        margin: 100px auto;
+        background: var(--bg-primary);
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px var(--shadow);
+      }
+
+      .auth-title {
+        font-size: 28px;
+        margin-bottom: 30px;
+        text-align: center;
+        color: var(--text-primary);
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 16px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        transition: border-color 0.3s ease;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: var(--primary-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px var(--shadow);
+      }
+
+      .btn-secondary {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+      }
+
+      .btn-block {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Header Styles */
+      .header {
+        background: var(--bg-primary);
+        box-shadow: 0 2px 4px var(--shadow);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+      }
+
+      .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 0;
+      }
+
+      .logo {
+        font-size: 24px;
+        font-weight: bold;
+        color: var(--primary);
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .theme-toggle {
+        background: var(--bg-tertiary);
+        border: none;
+        padding: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+      }
+
+      .theme-toggle:hover {
+        background: var(--border);
+      }
+
+      /* Week Navigation */
+      .week-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        background: var(--bg-primary);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px var(--shadow);
+      }
+
+      .week-display {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      /* Goals Section */
+      .goals-section {
+        background: var(--bg-primary);
+        padding: 24px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px var(--shadow);
+      }
+
+      .goals-title {
+        font-size: 20px;
+        margin-bottom: 20px;
+        color: var(--text-primary);
+      }
+
+      .goal-input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+      }
+
+      .action-steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      .action-step {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: var(--primary);
+      }
+
+      /* Accordion Styles */
+      .accordion {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .accordion-item {
+        background: var(--bg-primary);
+        border-radius: 12px;
+        box-shadow: 0 2px 4px var(--shadow);
+        overflow: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .accordion-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        cursor: pointer;
+        background: var(--bg-primary);
+        border: none;
+        width: 100%;
+        text-align: left;
+        transition: all 0.3s ease;
+      }
+
+      .accordion-header:hover {
+        background: var(--bg-secondary);
+      }
+
+      .accordion-header.expanded {
+        background: var(--bg-secondary);
+      }
+
+      .day-header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+      }
+
+      .day-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--primary);
+        text-transform: capitalize;
+      }
+
+      .day-date {
+        color: var(--text-secondary);
+        font-size: 14px;
+      }
+
+      .accordion-icon {
+        font-size: 20px;
+        color: var(--text-secondary);
+        transition: transform 0.3s ease;
+        margin-left: 16px;
+      }
+
+      .accordion-icon.expanded {
+        transform: rotate(180deg);
+      }
+
+      .accordion-content {
+        padding: 0 20px 20px 20px;
+        background: var(--bg-primary);
+      }
+
+      .accordion-collapse {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+      }
+
+      .accordion-collapse.expanded {
+        max-height: 2000px;
+        /* Large enough to accommodate content */
+      }
+
+      /* Task Stats in Header */
+      .day-stats {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-left: 16px;
+      }
+
+      .stat-badge {
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .stat-badge.completed {
+        background: var(--secondary);
+        color: white;
+      }
+
+      .stat-badge.deferred {
+        background: var(--warning);
+        color: white;
+      }
+
+      .stat-badge.cancelled {
+        background: var(--danger);
+        color: white;
+      }
+
+      /* Daily Planner Content Styles */
+      .tasks-section {
+        margin-bottom: 24px;
+      }
+
+      .task-group {
+        margin-bottom: 16px;
+      }
+
+      .task-label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text-secondary);
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .task-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+        padding: 12px;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .task-item:hover {
+        background: var(--bg-tertiary);
+      }
+
+      .task-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        font-size: 16px;
+      }
+
+      .task-input:focus {
+        outline: none;
+      }
+
+      .task-status {
+        display: flex;
+        gap: 8px;
+      }
+
+      .status-btn {
+        padding: 4px 8px;
+        border: none;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .status-completed {
+        background: var(--secondary);
+        color: white;
+      }
+
+      .status-deferred {
+        background: var(--warning);
+        color: white;
+      }
+
+      .status-cancelled {
+        background: var(--danger);
+        color: white;
+      }
+
+      .status-incomplete {
+        background: var(--text-secondary);
+        color: white;
+      }
+
+      .task-item.completed .task-input {
+        text-decoration: line-through;
+        opacity: 0.6;
+      }
+
+      /* Time Blocks */
+      .time-blocks {
+        margin-bottom: 24px;
+      }
+
+      .time-block {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+        transition: all 0.3s ease;
+      }
+
+      .time-block:hover {
+        background: var(--bg-secondary);
+      }
+
+      .time-label {
+        font-weight: 600;
+        color: var(--text-secondary);
+        min-width: 70px;
+        font-size: 14px;
+      }
+
+      .time-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        padding: 4px;
+      }
+
+      .time-input:focus {
+        outline: none;
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+      }
+
+      /* Nightly Recap */
+      .recap-section {
+        background: var(--bg-tertiary);
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+      }
+
+      .recap-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: var(--text-primary);
+      }
+
+      .recap-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+
+      .stat-card {
+        background: var(--bg-primary);
+        padding: 12px;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 4px;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+      }
+
+      .recap-prompts {
+        display: grid;
+        gap: 16px;
+      }
+
+      .prompt-group {
+        background: var(--bg-primary);
+        padding: 16px;
+        border-radius: 8px;
+      }
+
+      .prompt-question {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text-secondary);
+      }
+
+      .prompt-input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        resize: vertical;
+        min-height: 60px;
+      }
+
+      /* Mobile Responsive */
+      @media (max-width: 768px) {
+        .container {
+          padding: 10px;
+        }
+
+        .week-nav {
+          flex-direction: column;
+          gap: 16px;
+          text-align: center;
+        }
+
+        .header-content {
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .action-steps {
+          grid-template-columns: 1fr;
+        }
+
+        .accordion-item {
+          margin: 0;
+        }
+
+        .time-label {
+          min-width: 60px;
+          font-size: 12px;
+        }
+
+        .recap-stats {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .day-stats {
+          display: none;
+          /* Hide stats on mobile to save space */
+        }
+      }
+
+      /* Loading State */
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-secondary);
+      }
+
+      .spinner {
+        border: 3px solid var(--border);
+        border-radius: 50%;
+        border-top: 3px solid var(--primary);
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Fade transitions */
+      .fade-enter-active,
+      .fade-leave-active {
+        transition: opacity 0.3s ease;
+      }
+
+      .fade-enter-from,
+      .fade-leave-to {
+        opacity: 0;
+      }
+
+      /* Modal Styles */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+      }
+
+      .modal-content {
+        background: var(--bg-primary);
+        padding: 30px;
+        border-radius: 12px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+      }
+
+      .modal-content h2 {
+        margin-bottom: 20px;
+        color: var(--text-primary);
+      }
+
+      /* Priority-based visual hierarchy */
+      .task-item {
+        position: relative;
+        padding-left: 20px;
+        /* Make room for priority indicator */
+      }
+
+      .task-item[data-priority="high"] {
+        border: 2px solid #ef4444;
+        background: linear-gradient(
+          90deg,
+          #fef2f2 0%,
+          var(--bg-secondary) 100%
+        );
+      }
+
+      .task-item[data-priority="medium"] {
+        border: 2px solid #f59e0b;
+        background: linear-gradient(
+          90deg,
+          #fffbeb 0%,
+          var(--bg-secondary) 100%
+        );
+      }
+
+      .task-item[data-priority="low"] {
+        border: 2px solid #10b981;
+        background: linear-gradient(
+          90deg,
+          #f0fdf4 0%,
+          var(--bg-secondary) 100%
+        );
+      }
+
+      /* Dark mode priority backgrounds */
+      [data-theme="dark"] .task-item[data-priority="high"] {
+        background: linear-gradient(
+          90deg,
+          rgba(239, 68, 68, 0.1) 0%,
+          var(--bg-secondary) 100%
+        );
+      }
+
+      [data-theme="dark"] .task-item[data-priority="medium"] {
+        background: linear-gradient(
+          90deg,
+          rgba(245, 158, 11, 0.1) 0%,
+          var(--bg-secondary) 100%
+        );
+      }
+
+      [data-theme="dark"] .task-item[data-priority="low"] {
+        background: linear-gradient(
+          90deg,
+          rgba(16, 185, 129, 0.1) 0%,
+          var(--bg-secondary) 100%
+        );
+      }
+
+      /* Enhanced drag and drop styles */
+      .enhanced-task {
+        border-radius: 12px;
+        margin-bottom: 12px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: grab;
+      }
+
+      .enhanced-task:active {
+        cursor: grabbing;
+      }
+
+      .enhanced-task.dragging {
+        opacity: 0.5;
+        transform: rotate(5deg) scale(1.05);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+      }
+
+      .enhanced-task.drop-zone-active {
+        border: 3px dashed var(--primary);
+        background: var(--bg-tertiary);
+        transform: scale(1.02);
+      }
+
+      .drag-handle {
+        font-size: 16px;
+        opacity: 0.5;
+        transition: opacity 0.3s ease;
+        user-select: none;
+        cursor: grab;
+        display: flex;
+        align-items: center;
+      }
+
+      .enhanced-task:hover .drag-handle {
+        opacity: 1;
+        color: var(--primary);
+      }
+
+      /* Priority indicator styles */
+      .priority-indicator {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 6px;
+        height: 100%;
+        border-radius: 12px 0 0 12px;
+        transition: width 0.3s ease;
+      }
+
+      .enhanced-task:hover .priority-indicator {
+        width: 8px;
+      }
+
+      /* Enhanced priority selector */
+      .priority-select {
+        min-width: 100px;
+        font-size: 11px;
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .priority-select:hover {
+        border-color: var(--primary);
+        box-shadow: 0 2px 4px var(--shadow);
+      }
+
+      .priority-select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+      }
+
+      /* Enhanced quick actions bar */
+      .quick-actions-bar {
+        background: linear-gradient(
+          135deg,
+          var(--bg-primary) 0%,
+          var(--bg-secondary) 100%
+        );
+        border: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .quick-actions-bar::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--primary),
+          transparent
+        );
+        animation: shimmer 3s infinite;
+      }
+
+      @keyframes shimmer {
+        0% {
+          left: -100%;
+        }
+
+        50% {
+          left: 100%;
+        }
+
+        100% {
+          left: 100%;
+        }
+      }
+
+      .quick-actions-bar button {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .quick-actions-bar button:hover {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px var(--shadow);
+      }
+
+      .quick-actions-bar button:active {
+        transform: translateY(0);
+      }
+
+      /* Enhanced day drop zone */
+      .day-drop-zone {
+        opacity: 0;
+        transition: all 0.3s ease;
+        transform: translateY(-10px);
+      }
+
+      .day-drop-zone.active {
+        opacity: 1;
+        transform: translateY(0);
+        border-color: var(--primary);
+        background: linear-gradient(
+          135deg,
+          var(--bg-secondary),
+          var(--bg-tertiary)
+        );
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      /* Enhanced accordion headers with better visual hierarchy */
+      .accordion-header {
+        transition: all 0.3s ease;
+        border-bottom: 1px solid transparent;
+      }
+
+      .accordion-header:hover {
+        background: linear-gradient(
+          135deg,
+          var(--bg-secondary),
+          var(--bg-tertiary)
+        );
+        border-bottom-color: var(--border);
+      }
+
+      .accordion-header.expanded {
+        background: linear-gradient(
+          135deg,
+          var(--bg-tertiary),
+          var(--bg-secondary)
+        );
+        border-bottom-color: var(--primary);
+      }
+
+      /* Enhanced day stats badges */
+      .day-stats {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .stat-badge {
+        font-size: 10px;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-badge:hover {
+        transform: scale(1.1);
+      }
+
+      .stat-badge.completed {
+        background: linear-gradient(135deg, #10b981, #059669);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      }
+
+      .stat-badge.deferred {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+      }
+
+      .stat-badge.cancelled {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+      }
+
+      /* Enhanced task status buttons */
+      .status-btn {
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+      }
+
+      .status-btn:hover {
+        transform: scale(1.1);
+        border-color: currentColor;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      .status-btn:active {
+        transform: scale(0.95);
+      }
+
+      /* Keyboard navigation styles */
+      .keyboard-focus {
+        outline: 3px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      /* Enhanced mobile responsiveness */
+      @media (max-width: 768px) {
+        .enhanced-task {
+          padding-left: 12px;
+          margin-bottom: 8px;
+        }
+
+        .priority-indicator {
+          width: 4px;
+        }
+
+        .drag-handle {
+          display: none;
+        }
+
+        .priority-select {
+          display: none;
+        }
+
+        .task-status {
+          gap: 4px;
+        }
+
+        .status-btn {
+          width: 28px;
+          height: 28px;
+          font-size: 12px;
+        }
+
+        .quick-actions-bar {
+          padding: 12px;
+        }
+
+        .quick-actions-bar button {
+          padding: 8px 12px;
+          font-size: 12px;
+        }
+
+        .day-stats {
+          display: none;
+        }
+
+        .accordion-header {
+          padding: 16px;
+        }
+
+        .day-title {
+          font-size: 20px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .task-item {
+          padding: 8px 12px;
+          gap: 8px;
+        }
+
+        .task-input {
+          font-size: 14px;
+        }
+
+        .quick-actions-bar {
+          padding: 8px;
+        }
+
+        .quick-actions-bar button {
+          padding: 6px 10px;
+          font-size: 11px;
+        }
+
+        .accordion-content {
+          padding: 0 16px 16px 16px;
+        }
+      }
+
+      /* Loading states and animations */
+      .task-item.saving {
+        position: relative;
+        pointer-events: none;
+      }
+
+      .task-item.saving::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.4),
+          transparent
+        );
+        animation: loading-shimmer 1.5s infinite;
+      }
+
+      @keyframes loading-shimmer {
+        0% {
+          transform: translateX(-100%);
+        }
+
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      /* Improved accessibility */
+      .enhanced-task:focus-within {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      .status-btn:focus {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      /* Print styles for better printing */
+      @media print {
+        .quick-actions-bar,
+        .drag-handle,
+        .priority-select,
+        .day-drop-zone {
+          display: none !important;
+        }
+
+        .enhanced-task {
+          break-inside: avoid;
+          margin-bottom: 8px;
+        }
+
+        .accordion-item {
+          break-inside: avoid;
+          margin-bottom: 20px;
+        }
+
+        .accordion-collapse {
+          max-height: none !important;
+        }
+
+        .accordion-header {
+          background: white !important;
+          color: black !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app">
+      <!-- Login/Register View -->
+      <div v-if="!isAuthenticated" class="auth-container">
+        <h1 class="auth-title">{{ isLogin ? 'Login' : 'Register' }}</h1>
+        <form @submit.prevent="handleAuth">
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input
+              type="text"
+              v-model="authForm.username"
+              class="form-input"
+              required
+            />
+          </div>
+          <div v-if="!isLogin" class="form-group">
+            <label class="form-label">Email</label>
+            <input
+              type="email"
+              v-model="authForm.email"
+              class="form-input"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input
+              type="password"
+              v-model="authForm.password"
+              class="form-input"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">
+            {{ isLogin ? 'Login' : 'Register' }}
+          </button>
+        </form>
+        <p
+          style="
+            text-align: center;
+            margin-top: 20px;
+            color: var(--text-secondary);
+          "
+        >
+          {{ isLogin ? "Don't have an account?" : "Already have an account?" }}
+          <a
+            href="#"
+            @click.prevent="isLogin = !isLogin"
+            style="color: var(--primary)"
+          >
+            {{ isLogin ? 'Register' : 'Login' }}
+          </a>
+        </p>
+      </div>
+
+      <!-- Main App -->
+      <div v-else>
+        <!-- Header -->
+        <header class="header">
+          <div class="container">
+            <div class="header-content">
+              <div class="logo">Weekly Planner</div>
+              <div class="header-actions">
+                <button @click="toggleTheme" class="theme-toggle">
+                  {{ theme === 'light' ? '🌙' : '☀️' }}
+                </button>
+                <button @click="showSettings = true" class="btn btn-secondary">
+                  ⚙️
+                </button>
+                <span style="color: var(--text-secondary)"
+                  >{{ user.username }}</span
+                >
+                <button @click="logout" class="btn btn-secondary">
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="container">
+          <!-- Settings Modal -->
+          <div
+            v-if="showSettings"
+            class="modal-overlay"
+            @click.self="showSettings = false"
+          >
+            <div class="modal-content">
+              <h2>Settings</h2>
+              <div class="form-group">
+                <label class="form-label">Work Day Start Time</label>
+                <select
+                  v-model.number="user.time_start"
+                  @change="updateUserSettings"
+                  class="form-input"
+                >
+                  <option v-for="hour in 24" :key="hour" :value="hour-1">
+                    {{ formatHour(hour-1) }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Work Day End Time</label>
+                <select
+                  v-model.number="user.time_end"
+                  @change="updateUserSettings"
+                  class="form-input"
+                >
+                  <option v-for="hour in 24" :key="hour" :value="hour-1">
+                    {{ formatHour(hour-1) }}
+                  </option>
+                </select>
+              </div>
+              <div style="display: flex; gap: 10px; margin-top: 20px">
+                <button @click="saveSettings" class="btn btn-primary">
+                  Save Settings
+                </button>
+                <button @click="showSettings = false" class="btn btn-secondary">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Week Navigation -->
+          <div class="week-nav">
+            <button @click="previousWeek" class="btn btn-secondary">
+              ← Previous Week
+            </button>
+            <div class="week-display">
+              Week of {{ formatDate(currentWeekStart) }}
+              <div style="font-size: 12px; color: var(--text-secondary)">
+                Time range: {{ user?.time_start || 6 }}:00 - {{ user?.time_end
+                || 18 }}:00 | Planner ID: {{ plannerId || 'None' }}
+              </div>
+            </div>
+            <button @click="nextWeek" class="btn btn-secondary">
+              Next Week →
+            </button>
+          </div>
+
+          <!-- Loading State -->
+          <div v-if="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading your planner...</p>
+          </div>
+
+          <!-- Planner Content -->
+          <div v-else>
+            <!-- Goals Section -->
+            <div class="goals-section">
+              <h2 class="goals-title">Weekly Goals</h2>
+              <input
+                v-model="planner.main_goal"
+                @blur="savePlanner"
+                placeholder="Your No. 1 Goal this week"
+                class="goal-input"
+              />
+              <input
+                v-model="planner.secondary_goal_1"
+                @blur="savePlanner"
+                placeholder="Secondary Goal 1"
+                class="goal-input"
+              />
+              <input
+                v-model="planner.secondary_goal_2"
+                @blur="savePlanner"
+                placeholder="Secondary Goal 2"
+                class="goal-input"
+              />
+
+              <h3 style="margin-top: 24px; margin-bottom: 16px">
+                Action Steps
+              </h3>
+              <div class="action-steps">
+                <div v-for="i in 10" :key="i" class="action-step">
+                  <input
+                    type="checkbox"
+                    v-model="weeklyGoals[i-1].is_completed"
+                    @change="updateWeeklyGoal(i-1)"
+                    class="checkbox"
+                  />
+                  <input
+                    v-model="weeklyGoals[i-1].description"
+                    @blur="updateWeeklyGoal(i-1)"
+                    placeholder="Action step"
+                    class="form-input"
+                    style="margin-bottom: 0"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Actions Bar -->
+            <div
+              class="quick-actions-bar"
+              style="
+                display: flex;
+                gap: 12px;
+                padding: 16px;
+                margin-bottom: 20px;
+                background: var(--bg-primary);
+                border-radius: 12px;
+                box-shadow: 0 2px 4px var(--shadow);
+              "
+            >
+              <button
+                @click="duplicateYesterday()"
+                class="btn btn-secondary"
+                title="Duplicate yesterday's tasks"
+              >
+                📋 Duplicate Yesterday
+              </button>
+              <button
+                @click="markDayComplete(getCurrentDay())"
+                class="btn btn-secondary"
+                title="Mark all today's tasks complete"
+              >
+                ✅ Complete Today
+              </button>
+              <button
+                @click="clearDay(getCurrentDay())"
+                class="btn btn-secondary"
+                title="Clear all today's tasks"
+              >
+                🗑️ Clear Today
+              </button>
+              <button
+                @click="showKeyboardHelp()"
+                class="btn btn-secondary"
+                title="Show keyboard shortcuts"
+              >
+                ⌨️ Shortcuts
+              </button>
+            </div>
+
+            <!-- Week Analytics -->
+            <div
+              class="analytics-section"
+              style="
+                background: var(--bg-primary);
+                padding: 20px;
+                border-radius: 12px;
+                margin-bottom: 20px;
+                box-shadow: 0 2px 4px var(--shadow);
+              "
+            >
+              <h3 style="margin-bottom: 16px">Week Analytics</h3>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                  gap: 12px;
+                "
+              >
+                <div class="stat-card">
+                  <div class="stat-value" style="color: var(--secondary)">
+                    {{ getWeeklyCompletionRate() }}%
+                  </div>
+                  <div class="stat-label">Completion Rate</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value" style="color: var(--primary)">
+                    {{ getMostProductiveDay() }}
+                  </div>
+                  <div class="stat-label">Most Productive Day</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value" style="color: var(--warning)">
+                    {{ getHighPriorityTasksRemaining() }}
+                  </div>
+                  <div class="stat-label">High Priority Remaining</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Daily Planners Accordion -->
+            <div class="accordion">
+              <div v-for="day in days" :key="day" class="accordion-item">
+                <!-- Accordion Header -->
+                <button
+                  @click="toggleDay(day)"
+                  class="accordion-header"
+                  :class="{ expanded: expandedDays[day] }"
+                >
+                  <div class="day-header-content">
+                    <div>
+                      <h3 class="day-title">{{ day }}</h3>
+                      <span class="day-date">{{ formatDayDate(day) }}</span>
+                    </div>
+                    <div class="day-stats">
+                      <span
+                        v-if="getDayStats(day).completed > 0"
+                        class="stat-badge completed"
+                      >
+                        ✓ {{ getDayStats(day).completed }}
+                      </span>
+                      <span
+                        v-if="getDayStats(day).deferred > 0"
+                        class="stat-badge deferred"
+                      >
+                        → {{ getDayStats(day).deferred }}
+                      </span>
+                      <span
+                        v-if="getDayStats(day).cancelled > 0"
+                        class="stat-badge cancelled"
+                      >
+                        ✕ {{ getDayStats(day).cancelled }}
+                      </span>
+                    </div>
+                  </div>
+                  <span
+                    class="accordion-icon"
+                    :class="{ expanded: expandedDays[day] }"
+                  >
+                    ▼
+                  </span>
+                </button>
+
+                <!-- Accordion Content -->
+                <div
+                  class="accordion-collapse"
+                  :class="{ expanded: expandedDays[day] }"
+                >
+                  <div class="accordion-content">
+                    <!-- Day Drop Zone -->
+                    <div
+                      class="day-drop-zone"
+                      :class="{ active: dropZoneActive && draggedFromDay !== day }"
+                      @dragover.prevent="handleTaskDragOver"
+                      @dragleave="handleTaskDragLeave"
+                      @drop="handleDayDrop($event, day)"
+                      v-show="draggedTask && draggedFromDay !== day"
+                      style="
+                        margin-bottom: 16px;
+                        padding: 20px;
+                        border: 2px dashed var(--border);
+                        border-radius: 8px;
+                        text-align: center;
+                        background: var(--bg-secondary);
+                        color: var(--text-secondary);
+                        transition: all 0.3s ease;
+                      "
+                    >
+                      <p>📥 Drop task here to move to {{ day }}</p>
+                    </div>
+
+                    <!-- Tasks Section -->
+                    <div class="tasks-section">
+                      <div class="task-group">
+                        <div class="task-label">Most Important</div>
+                        <!-- Enhanced Task Items with Drag & Drop -->
+                        <div
+                          v-for="i in 2"
+                          :key="`important-${i}`"
+                          class="task-item enhanced-task"
+                          :class="{ 
+                      completed: getTaskStatus(day, 'most_important', i) === 'completed',
+                      dragging: draggedTask && draggedFromDay === day && draggedFromType === 'most_important' && draggedFromNumber === i
+                    }"
+                          :data-priority="getTaskPriority(day, 'most_important', i)"
+                          draggable="true"
+                          @dragstart="handleTaskDragStart($event, day, 'most_important', i)"
+                          @dragend="handleTaskDragEnd"
+                          @dragover.prevent="handleTaskDragOver"
+                          @dragleave="handleTaskDragLeave"
+                          @drop="handleTaskDrop($event, day, 'most_important', i)"
+                        >
+                          <!-- Priority Indicator -->
+                          <div
+                            class="priority-indicator"
+                            :style="{ backgroundColor: taskPriorities[getTaskPriority(day, 'most_important', i)].color }"
+                          ></div>
+
+                          <!-- Drag Handle -->
+                          <div class="drag-handle" title="Drag to reorder">
+                            ⋮⋮
+                          </div>
+
+                          <!-- Task Input -->
+                          <input
+                            type="text"
+                            v-model="getTask(day, 'most_important', i).description"
+                            @blur="updateTask(day, 'most_important', i)"
+                            placeholder="Enter task"
+                            class="task-input"
+                          />
+
+                          <!-- Priority Selector -->
+                          <select
+                            v-model="getTask(day, 'most_important', i).priority"
+                            @change="updateTask(day, 'most_important', i)"
+                            class="priority-select"
+                            title="Set priority"
+                          >
+                            <option value="none">None</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                          </select>
+
+                          <!-- Task Status Buttons -->
+                          <div class="task-status">
+                            <button
+                              @click="setTaskStatus(day, 'most_important', i, 'completed')"
+                              class="status-btn status-completed"
+                              :style="{ opacity: getTaskStatus(day, 'most_important', i) === 'completed' ? 1 : 0.5 }"
+                              title="Mark Complete"
+                            >
+                              ✓
+                            </button>
+                            <button
+                              @click="setTaskStatus(day, 'most_important', i, 'deferred')"
+                              class="status-btn status-deferred"
+                              :style="{ opacity: getTaskStatus(day, 'most_important', i) === 'deferred' ? 1 : 0.5 }"
+                              title="Defer"
+                            >
+                              →
+                            </button>
+                            <button
+                              @click="setTaskStatus(day, 'most_important', i, 'cancelled')"
+                              class="status-btn status-cancelled"
+                              :style="{ opacity: getTaskStatus(day, 'most_important', i) === 'cancelled' ? 1 : 0.5 }"
+                              title="Cancel"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="task-group">
+                        <div class="task-label">Secondary Tasks</div>
+                        <!-- Enhanced Secondary Tasks with Drag & Drop -->
+                        <div
+                          v-for="i in 2"
+                          :key="`secondary-${i}`"
+                          class="task-item enhanced-task"
+                          :class="{ 
+                      completed: getTaskStatus(day, 'secondary', i) === 'completed',
+                      dragging: draggedTask && draggedFromDay === day && draggedFromType === 'secondary' && draggedFromNumber === i
+                    }"
+                          :data-priority="getTaskPriority(day, 'secondary', i)"
+                          draggable="true"
+                          @dragstart="handleTaskDragStart($event, day, 'secondary', i)"
+                          @dragend="handleTaskDragEnd"
+                          @dragover.prevent="handleTaskDragOver"
+                          @dragleave="handleTaskDragLeave"
+                          @drop="handleTaskDrop($event, day, 'secondary', i)"
+                        >
+                          <!-- Priority Indicator -->
+                          <div
+                            class="priority-indicator"
+                            :style="{ backgroundColor: taskPriorities[getTaskPriority(day, 'secondary', i)].color }"
+                          ></div>
+
+                          <!-- Drag Handle -->
+                          <div class="drag-handle" title="Drag to reorder">
+                            ⋮⋮
+                          </div>
+
+                          <!-- Task Input -->
+                          <input
+                            type="text"
+                            v-model="getTask(day, 'secondary', i).description"
+                            @blur="updateTask(day, 'secondary', i)"
+                            placeholder="Enter task"
+                            class="task-input"
+                          />
+
+                          <!-- Priority Selector -->
+                          <select
+                            v-model="getTask(day, 'secondary', i).priority"
+                            @change="updateTask(day, 'secondary', i)"
+                            class="priority-select"
+                            title="Set priority"
+                          >
+                            <option value="none">None</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                          </select>
+
+                          <!-- Task Status Buttons -->
+                          <div class="task-status">
+                            <button
+                              @click="setTaskStatus(day, 'secondary', i, 'completed')"
+                              class="status-btn status-completed"
+                              :style="{ opacity: getTaskStatus(day, 'secondary', i) === 'completed' ? 1 : 0.5 }"
+                              title="Mark Complete"
+                            >
+                              ✓
+                            </button>
+                            <button
+                              @click="setTaskStatus(day, 'secondary', i, 'deferred')"
+                              class="status-btn status-deferred"
+                              :style="{ opacity: getTaskStatus(day, 'secondary', i) === 'deferred' ? 1 : 0.5 }"
+                              title="Defer"
+                            >
+                              →
+                            </button>
+                            <button
+                              @click="setTaskStatus(day, 'secondary', i, 'cancelled')"
+                              class="status-btn status-cancelled"
+                              :style="{ opacity: getTaskStatus(day, 'secondary', i) === 'cancelled' ? 1 : 0.5 }"
+                              title="Cancel"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Time Blocks -->
+                    <div class="time-blocks">
+                      <h4
+                        style="
+                          margin-bottom: 12px;
+                          color: var(--text-secondary);
+                          font-size: 14px;
+                          text-transform: uppercase;
+                        "
+                      >
+                        Time Blocks
+                      </h4>
+                      <div
+                        v-for="hour in timeRange"
+                        :key="hour"
+                        class="time-block"
+                      >
+                        <span class="time-label">{{ formatHour(hour) }}</span>
+                        <input
+                          type="text"
+                          v-model="getTimeBlock(day, hour).description"
+                          @blur="updateTimeBlock(day, hour)"
+                          placeholder="What are you doing?"
+                          class="time-input"
+                        />
+                      </div>
+                    </div>
+
+                    <!-- Nightly Recap -->
+                    <div class="recap-section">
+                      <h4 class="recap-title">Nightly Recap</h4>
+
+                      <div class="recap-stats">
+                        <div class="stat-card">
+                          <div
+                            class="stat-value"
+                            style="color: var(--secondary)"
+                          >
+                            {{ getDayStats(day).completed }}
+                          </div>
+                          <div class="stat-label">Completed</div>
+                        </div>
+                        <div class="stat-card">
+                          <div class="stat-value" style="color: var(--warning)">
+                            {{ getDayStats(day).deferred }}
+                          </div>
+                          <div class="stat-label">Deferred</div>
+                        </div>
+                        <div class="stat-card">
+                          <div class="stat-value" style="color: var(--danger)">
+                            {{ getDayStats(day).cancelled }}
+                          </div>
+                          <div class="stat-label">Cancelled</div>
+                        </div>
+                        <div class="stat-card">
+                          <div
+                            class="stat-value"
+                            style="color: var(--text-secondary)"
+                          >
+                            {{ getDayStats(day).incomplete }}
+                          </div>
+                          <div class="stat-label">Incomplete</div>
+                        </div>
+                      </div>
+
+                      <div class="recap-prompts">
+                        <div class="prompt-group">
+                          <div class="prompt-question">
+                            What went well today?
+                          </div>
+                          <textarea
+                            v-model="getRecap(day).prompt_1_response"
+                            @blur="updateRecap(day)"
+                            class="prompt-input"
+                            placeholder="Reflect on your wins..."
+                          ></textarea>
+                        </div>
+                        <div class="prompt-group">
+                          <div class="prompt-question">
+                            What could be improved?
+                          </div>
+                          <textarea
+                            v-model="getRecap(day).prompt_2_response"
+                            @blur="updateRecap(day)"
+                            class="prompt-input"
+                            placeholder="Areas for growth..."
+                          ></textarea>
+                        </div>
+                        <div class="prompt-group">
+                          <div class="prompt-question">
+                            Tomorrow's priority?
+                          </div>
+                          <textarea
+                            v-model="getRecap(day).prompt_3_response"
+                            @blur="updateRecap(day)"
+                            class="prompt-input"
+                            placeholder="Your main focus for tomorrow..."
+                          ></textarea>
+                        </div>
+                        <div class="prompt-group">
+                          <div class="prompt-question">Additional Notes</div>
+                          <textarea
+                            v-model="getRecap(day).notes"
+                            @blur="updateRecap(day)"
+                            class="prompt-input"
+                            placeholder="Any other thoughts..."
+                          ></textarea>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+<script>
+// Inline configuration for Weekly Planner
+window.WeeklyPlannerConfig = {
+    API: {
+        BASE_URL: (() => {
+            // Auto-detect environment
+            const hostname = window.location.hostname;
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return 'http://localhost/weekly-planner/api';
+            } else if (hostname.includes('staging')) {
+                return 'https://staging.yourdomain.com/api';
+            } else {
+                return 'https://weekly-planner.kerwindows.com/api';
+            }
+        })(),
+        TIMEOUT: 20000,
+        ENDPOINTS: {
+            AUTH: {
+                LOGIN: '/auth/login.php',
+                REGISTER: '/auth/register.php',
+                LOGOUT: '/auth/logout.php'
+            },
+            PLANNER: {
+                GET: '/planner/get.php',
+                CREATE: '/planner/create.php',
+                UPDATE: '/planner/update.php'
+            },
+            GOALS: {
+                UPDATE: '/goals/update.php'
+            },
+            TASKS: {
+                UPDATE: '/tasks/update.php'
+            },
+            TIME_BLOCKS: {
+                UPDATE: '/timeblock/update.php'
+            },
+            RECAPS: {
+                UPDATE: '/recap/update.php'
+            },
+            USER: {
+                UPDATE_SETTINGS: '/user/update-settings.php'
+            }
+        }
+    },
+    STORAGE_KEYS: {
+        AUTH_TOKEN: 'weekly-planner-auth-token',
+        USER_DATA: 'weekly-planner-user',
+        THEME: 'weekly-planner-theme'
+    },
+    FEATURES: {
+        DRAG_DROP: true,
+        ANALYTICS: true,
+        DARK_MODE: true
+    }
+};
+
+// Simple utility functions
+window.ConfigUtils = {
+    get(path, defaultValue = null) {
+        return path.split('.').reduce((obj, key) => 
+            (obj && obj[key] !== undefined) ? obj[key] : defaultValue, WeeklyPlannerConfig
+        );
+    },
+    
+    getApiUrl(endpoint) {
+        return WeeklyPlannerConfig.API.BASE_URL + endpoint;
+    },
+    
+    getApiEndpoint(category, action) {
+        const endpoint = this.get(`API.ENDPOINTS.${category.toUpperCase()}.${action.toUpperCase()}`);
+        return endpoint ? this.getApiUrl(endpoint) : null;
+    },
+    
+    getStorageKey(key) {
+        return this.get(`STORAGE_KEYS.${key.toUpperCase()}`);
+    }
+};
+
+console.log('✅ Weekly Planner configuration loaded');
+</script>
+
+    <script>
+      const { createApp } = Vue;
+
+      // Configure axios defaults
+      axios.defaults.baseURL = WeeklyPlannerConfig.API.BASE_URL;
+
+      createApp({
+        data() {
+          return {
+            // Auth state
+            isAuthenticated: false,
+            isLogin: true,
+            authForm: {
+              username: "",
+              email: "",
+              password: "",
+            },
+            user: null,
+            token: null,
+
+            // Theme
+            theme: "light",
+
+            // Settings
+            showSettings: false,
+
+            // Accordion state
+            expandedDays: {},
+
+            // Planner state
+            loading: false,
+            currentWeekStart: null,
+            planner: {
+              main_goal: "",
+              secondary_goal_1: "",
+              secondary_goal_2: "",
+            },
+            plannerId: null,
+            weeklyGoals: [],
+            dailyTasks: {},
+            timeBlocks: {},
+            nightlyRecaps: {},
+
+            // Constants - Updated to start with Sunday
+            days: [
+              "sunday",
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday",
+            ],
+            // Drag & Drop state
+            draggedTask: null,
+            draggedFromDay: null,
+            draggedFromType: null,
+            draggedFromNumber: null,
+            dropZoneActive: false,
+
+            // Task priorities (for improvement #5)
+            taskPriorities: {
+              high: { color: "#EF4444", label: "High" },
+              medium: { color: "#F59E0B", label: "Medium" },
+              low: { color: "#10B981", label: "Low" },
+              none: { color: "#6B7280", label: "None" },
+            },
+          };
+        },
+
+        computed: {
+          timeRange() {
+            const start = this.user?.time_start || 6;
+            const end = this.user?.time_end || 18;
+            // Ensure we're working with valid hour ranges (0-23)
+            const validStart = Math.max(0, Math.min(23, parseInt(start)));
+            const validEnd = Math.max(0, Math.min(23, parseInt(end)));
+            const finalEnd = validEnd >= validStart ? validEnd : 23;
+
+            return Array.from(
+              { length: finalEnd - validStart + 1 },
+              (_, i) => validStart + i
+            );
+          },
+        },
+
+        methods: {
+          // Accordion methods
+          toggleDay(day) {
+            this.expandedDays[day] = !this.expandedDays[day];
+          },
+
+          initializeAccordion() {
+            // Initialize all days as collapsed
+            this.expandedDays = {};
+            this.days.forEach((day) => {
+              this.expandedDays[day] = false;
+            });
+          },
+
+          // Authentication methods
+          async handleAuth() {
+            try {
+              const endpoint = this.isLogin
+                ? "/auth/login.php"
+                : "/auth/register.php";
+              const response = await axios.post(endpoint, this.authForm);
+
+              if (this.isLogin) {
+                this.token = response.data.token;
+                this.user = response.data.user;
+                localStorage.setItem("token", this.token);
+                localStorage.setItem("user", JSON.stringify(this.user));
+                axios.defaults.headers.common[
+                  "Authorization"
+                ] = `Bearer ${this.token}`;
+                this.isAuthenticated = true;
+                this.initializePlanner();
+              } else {
+                // After registration, switch to login
+                this.isLogin = true;
+                alert("Registration successful! Please login.");
+              }
+            } catch (error) {
+              alert(error.response?.data?.message || "An error occurred");
+            }
+          },
+
+          logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            this.isAuthenticated = false;
+            this.token = null;
+            this.user = null;
+          },
+
+          // Theme methods
+          toggleTheme() {
+            this.theme = this.theme === "light" ? "dark" : "light";
+            document.documentElement.setAttribute("data-theme", this.theme);
+            localStorage.setItem("theme", this.theme);
+          },
+
+          // Date methods - Updated for Sunday start
+          getSunday(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day; // Sunday is 0, so no adjustment needed
+            return new Date(d.setDate(diff));
+          },
+
+          formatDate(date) {
+            return new Date(date).toLocaleDateString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            });
+          },
+
+          formatDayDate(day) {
+            const dayIndex = this.days.indexOf(day);
+            const date = new Date(this.currentWeekStart);
+            date.setDate(date.getDate() + dayIndex);
+            return date.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            });
+          },
+
+          formatHour(hour) {
+            const period = hour >= 12 ? "pm" : "am";
+            const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+            return `${displayHour}:00 ${period}`;
+          },
+
+          previousWeek() {
+            const date = new Date(this.currentWeekStart);
+            date.setDate(date.getDate() - 7);
+            this.currentWeekStart = date;
+            this.loadPlanner();
+          },
+
+          nextWeek() {
+            const date = new Date(this.currentWeekStart);
+            date.setDate(date.getDate() + 7);
+            this.currentWeekStart = date;
+            this.loadPlanner();
+          },
+
+          // Planner methods
+          async initializePlanner() {
+            this.currentWeekStart = this.getSunday(new Date()); // Changed to getSunday
+            this.initializeEmptyData();
+            this.initializeAccordion();
+            await this.loadPlanner();
+          },
+
+          // Initialize task objects with priority
+          initializeEmptyData() {
+            // Initialize weekly goals
+            this.weeklyGoals = Array(10)
+              .fill(null)
+              .map(() => ({
+                description: "",
+                is_completed: false,
+              }));
+
+            // Initialize daily tasks with priority
+            this.dailyTasks = {};
+            this.days.forEach((day) => {
+              this.dailyTasks[day] = {
+                most_important: {
+                  1: { description: "", status: "pending", priority: "none" },
+                  2: { description: "", status: "pending", priority: "none" },
+                },
+                secondary: {
+                  1: { description: "", status: "pending", priority: "none" },
+                  2: { description: "", status: "pending", priority: "none" },
+                },
+              };
+            });
+
+            // Initialize time blocks
+            this.timeBlocks = {};
+            this.days.forEach((day) => {
+              this.timeBlocks[day] = {};
+              this.timeRange.forEach((hour) => {
+                this.timeBlocks[day][hour] = { description: "" };
+              });
+            });
+
+            // Initialize nightly recaps
+            this.nightlyRecaps = {};
+            this.days.forEach((day) => {
+              this.nightlyRecaps[day] = {
+                notes: "",
+                prompt_1_response: "",
+                prompt_2_response: "",
+                prompt_3_response: "",
+              };
+            });
+          },
+
+          async loadPlanner() {
+            this.loading = true;
+            try {
+              // Reset all planner data to empty state
+              this.initializeEmptyData();
+
+              const weekStart = this.currentWeekStart
+                .toISOString()
+                .split("T")[0];
+              const response = await axios.get(
+                `/planner/get.php?week_start_date=${weekStart}`
+              );
+
+              if (response.data.id) {
+                this.plannerId = response.data.id;
+                this.planner = {
+                  main_goal: response.data.main_goal || "",
+                  secondary_goal_1: response.data.secondary_goal_1 || "",
+                  secondary_goal_2: response.data.secondary_goal_2 || "",
+                };
+
+                // Load weekly goals
+                if (response.data.weekly_goals) {
+                  response.data.weekly_goals.forEach((goal) => {
+                    this.weeklyGoals[goal.goal_number - 1] = {
+                      description: goal.description || "",
+                      is_completed: goal.is_completed === "1",
+                    };
+                  });
+                }
+
+                // Load daily tasks with priority support
+                if (response.data.daily_tasks) {
+                  response.data.daily_tasks.forEach((task) => {
+                    this.dailyTasks[task.day_of_week][task.task_type][
+                      task.task_number
+                    ] = {
+                      description: task.description || "",
+                      status: task.status,
+                      priority: task.priority || "none", // Load priority from DB
+                    };
+                  });
+                }
+
+                // Load time blocks
+                if (response.data.time_blocks) {
+                  response.data.time_blocks.forEach((block) => {
+                    this.timeBlocks[block.day_of_week][block.hour] = {
+                      description: block.description || "",
+                    };
+                  });
+                }
+
+                // Load nightly recaps
+                if (response.data.nightly_recaps) {
+                  response.data.nightly_recaps.forEach((recap) => {
+                    this.nightlyRecaps[recap.day_of_week] = {
+                      notes: recap.notes || "",
+                      prompt_1_response: recap.prompt_1_response || "",
+                      prompt_2_response: recap.prompt_2_response || "",
+                      prompt_3_response: recap.prompt_3_response || "",
+                    };
+                  });
+                }
+              } else {
+                // Create new planner
+                await this.createNewPlanner();
+              }
+            } catch (error) {
+              console.error("Error loading planner:", error);
+            }
+            this.loading = false;
+          },
+
+          // Bulk task operations
+          async bulkUpdateTasks(operations) {
+            for (const op of operations) {
+              await this.updateTask(op.day, op.type, op.number);
+            }
+          },
+
+          // Task filtering and sorting
+          getTasksByPriority(day, priority) {
+            const tasks = [];
+            const dayTasks = this.dailyTasks[day];
+
+            Object.keys(dayTasks).forEach((type) => {
+              Object.keys(dayTasks[type]).forEach((number) => {
+                const task = dayTasks[type][number];
+                if (task.priority === priority && task.description) {
+                  tasks.push({
+                    ...task,
+                    day,
+                    type,
+                    number,
+                    id: `${day}-${type}-${number}`,
+                  });
+                }
+              });
+            });
+
+            return tasks;
+          },
+
+          // Get all incomplete tasks for the week
+          getIncompleteTasksForWeek() {
+            const incompleteTasks = [];
+
+            this.days.forEach((day) => {
+              const dayTasks = this.dailyTasks[day];
+              Object.keys(dayTasks).forEach((type) => {
+                Object.keys(dayTasks[type]).forEach((number) => {
+                  const task = dayTasks[type][number];
+                  if (task.description && task.status === "pending") {
+                    incompleteTasks.push({
+                      ...task,
+                      day,
+                      type,
+                      number,
+                      id: `${day}-${type}-${number}`,
+                    });
+                  }
+                });
+              });
+            });
+
+            return incompleteTasks;
+          },
+
+          async createNewPlanner() {
+            try {
+              const weekStart = this.currentWeekStart
+                .toISOString()
+                .split("T")[0];
+              const response = await axios.post("/planner/create.php", {
+                week_start_date: weekStart,
+                main_goal: "",
+                secondary_goal_1: "",
+                secondary_goal_2: "",
+              });
+              if (response.data.planner_id) {
+                this.plannerId = response.data.planner_id;
+              }
+            } catch (error) {
+              console.error("Error creating new planner:", error);
+            }
+          },
+
+          async savePlanner() {
+            try {
+              const weekStart = this.currentWeekStart
+                .toISOString()
+                .split("T")[0];
+
+              if (this.plannerId) {
+                // Update existing planner
+                const response = await axios.post("/planner/update.php", {
+                  planner_id: this.plannerId,
+                  main_goal: this.planner.main_goal,
+                  secondary_goal_1: this.planner.secondary_goal_1,
+                  secondary_goal_2: this.planner.secondary_goal_2,
+                });
+              } else {
+                // Create new planner
+                const response = await axios.post("/planner/create.php", {
+                  week_start_date: weekStart,
+                  main_goal: this.planner.main_goal,
+                  secondary_goal_1: this.planner.secondary_goal_1,
+                  secondary_goal_2: this.planner.secondary_goal_2,
+                });
+
+                if (response.data.planner_id) {
+                  this.plannerId = response.data.planner_id;
+                }
+              }
+            } catch (error) {
+              console.error("Error saving planner:", error);
+            }
+          },
+
+          async updateWeeklyGoal(index) {
+            if (!this.plannerId) return;
+
+            try {
+              await axios.post("/goals/update.php", {
+                planner_id: this.plannerId,
+                goal_number: index + 1,
+                description: this.weeklyGoals[index].description,
+                is_completed: this.weeklyGoals[index].is_completed,
+              });
+            } catch (error) {
+              console.error("Error updating goal:", error);
+            }
+          },
+
+          getTask(day, type, number) {
+            return this.dailyTasks[day][type][number];
+          },
+
+          getTaskStatus(day, type, number) {
+            return this.dailyTasks[day][type][number].status;
+          },
+
+          // Helper method for quick actions
+          getCurrentDay() {
+            const today = new Date();
+            return this.days[today.getDay()];
+          },
+
+          // Enhanced task update to include priority
+          async updateTask(day, type, number) {
+            if (!this.plannerId) return;
+
+            const task = this.getTask(day, type, number);
+
+            try {
+              await axios.post("/tasks/update.php", {
+                planner_id: this.plannerId,
+                day_of_week: day,
+                task_type: type,
+                task_number: number,
+                description: task.description,
+                status: task.status,
+                priority: task.priority || "none", // Include priority
+              });
+            } catch (error) {
+              console.error("Error updating task:", error);
+            }
+          },
+
+          async setTaskStatus(day, type, number, status) {
+            this.dailyTasks[day][type][number].status = status;
+            await this.updateTask(day, type, number);
+            await this.updateRecapStats(day);
+          },
+
+          getTimeBlock(day, hour) {
+            return this.timeBlocks[day][hour];
+          },
+
+          async updateTimeBlock(day, hour) {
+            if (!this.plannerId) return;
+
+            try {
+              await axios.post("/timeblock/update.php", {
+                planner_id: this.plannerId,
+                day_of_week: day,
+                hour: hour,
+                description: this.timeBlocks[day][hour].description,
+              });
+            } catch (error) {
+              console.error("Error updating time block:", error);
+            }
+          },
+
+          getRecap(day) {
+            return this.nightlyRecaps[day];
+          },
+
+          getDayStats(day) {
+            const tasks = this.dailyTasks[day];
+            let stats = {
+              completed: 0,
+              deferred: 0,
+              cancelled: 0,
+              incomplete: 0,
+            };
+
+            Object.values(tasks).forEach((typeGroup) => {
+              Object.values(typeGroup).forEach((task) => {
+                if (task.status === "completed") stats.completed++;
+                else if (task.status === "deferred") stats.deferred++;
+                else if (task.status === "cancelled") stats.cancelled++;
+                else if (task.status === "incomplete") stats.incomplete++;
+              });
+            });
+
+            return stats;
+          },
+
+          async updateRecap(day) {
+            if (!this.plannerId) return;
+
+            const stats = this.getDayStats(day);
+
+            try {
+              await axios.post("/recap/update.php", {
+                planner_id: this.plannerId,
+                day_of_week: day,
+                notes: this.nightlyRecaps[day].notes,
+                prompt_1_response: this.nightlyRecaps[day].prompt_1_response,
+                prompt_2_response: this.nightlyRecaps[day].prompt_2_response,
+                prompt_3_response: this.nightlyRecaps[day].prompt_3_response,
+                tasks_completed: stats.completed,
+                tasks_deferred: stats.deferred,
+                tasks_cancelled: stats.cancelled,
+                tasks_incomplete: stats.incomplete,
+              });
+            } catch (error) {
+              console.error("Error updating recap:", error);
+            }
+          },
+
+          async updateRecapStats(day) {
+            await this.updateRecap(day);
+          },
+
+          updateUserSettings() {
+            localStorage.setItem("user", JSON.stringify(this.user));
+          },
+
+          async saveSettings() {
+            try {
+              const response = await axios.post("/user/update-settings.php", {
+                time_start: this.user.time_start,
+                time_end: this.user.time_end,
+              });
+
+              if (response.data.message) {
+                localStorage.setItem("user", JSON.stringify(this.user));
+                this.showSettings = false;
+                // Reinitialize time blocks with new range
+                this.initializeEmptyData();
+                await this.loadPlanner();
+              }
+            } catch (error) {
+              console.error("Error saving settings:", error);
+              alert("Failed to save settings. Please try again.");
+            }
+          },
+
+          // Drag & Drop Methods
+          handleTaskDragStart(event, day, type, number) {
+            this.draggedTask = this.getTask(day, type, number);
+            this.draggedFromDay = day;
+            this.draggedFromType = type;
+            this.draggedFromNumber = number;
+
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/html", event.target.outerHTML);
+
+            // Add visual feedback
+            event.target.style.opacity = "0.5";
+
+            console.log(
+              `Dragging task from ${day} ${type} ${number}:`,
+              this.draggedTask.description
+            );
+          },
+
+          handleTaskDragEnd(event) {
+            event.target.style.opacity = "1";
+            this.draggedTask = null;
+            this.draggedFromDay = null;
+            this.draggedFromType = null;
+            this.draggedFromNumber = null;
+            this.dropZoneActive = false;
+          },
+
+          handleTaskDragOver(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move";
+            this.dropZoneActive = true;
+          },
+
+          handleTaskDragLeave(event) {
+            this.dropZoneActive = false;
+          },
+
+          async handleTaskDrop(event, targetDay, targetType, targetNumber) {
+            event.preventDefault();
+            this.dropZoneActive = false;
+
+            if (!this.draggedTask) return;
+
+            // Don't drop on the same location
+            if (
+              this.draggedFromDay === targetDay &&
+              this.draggedFromType === targetType &&
+              this.draggedFromNumber === targetNumber
+            ) {
+              return;
+            }
+
+            // Get the target task (might be empty)
+            const targetTask = this.getTask(
+              targetDay,
+              targetType,
+              targetNumber
+            );
+
+            // Swap tasks
+            const draggedTaskCopy = { ...this.draggedTask };
+            const targetTaskCopy = { ...targetTask };
+
+            // Update the tasks
+            this.dailyTasks[targetDay][targetType][targetNumber] =
+              draggedTaskCopy;
+            this.dailyTasks[this.draggedFromDay][this.draggedFromType][
+              this.draggedFromNumber
+            ] = targetTaskCopy;
+
+            // Save both tasks to backend
+            await this.updateTask(targetDay, targetType, targetNumber);
+            await this.updateTask(
+              this.draggedFromDay,
+              this.draggedFromType,
+              this.draggedFromNumber
+            );
+
+            console.log(
+              `Moved task to ${targetDay} ${targetType} ${targetNumber}`
+            );
+          },
+
+          // Drag between days
+          async handleDayDrop(event, targetDay) {
+            event.preventDefault();
+            this.dropZoneActive = false;
+
+            if (!this.draggedTask || this.draggedFromDay === targetDay) return;
+
+            // Find first empty slot in target day (prefer same type)
+            const targetType = this.draggedFromType;
+            let targetSlot = null;
+
+            // Try to find empty slot in same task type
+            for (let i = 1; i <= 2; i++) {
+              if (!this.getTask(targetDay, targetType, i).description) {
+                targetSlot = { type: targetType, number: i };
+                break;
+              }
+            }
+
+            // If same type is full, try other type
+            if (!targetSlot) {
+              const otherType =
+                targetType === "most_important"
+                  ? "secondary"
+                  : "most_important";
+              for (let i = 1; i <= 2; i++) {
+                if (!this.getTask(targetDay, otherType, i).description) {
+                  targetSlot = { type: otherType, number: i };
+                  break;
+                }
+              }
+            }
+
+            if (targetSlot) {
+              // Move task to new day
+              const draggedTaskCopy = { ...this.draggedTask };
+              this.dailyTasks[targetDay][targetSlot.type][targetSlot.number] =
+                draggedTaskCopy;
+
+              // Clear original task
+              this.dailyTasks[this.draggedFromDay][this.draggedFromType][
+                this.draggedFromNumber
+              ] = { description: "", status: "pending" };
+
+              // Save both changes
+              await this.updateTask(
+                targetDay,
+                targetSlot.type,
+                targetSlot.number
+              );
+              await this.updateTask(
+                this.draggedFromDay,
+                this.draggedFromType,
+                this.draggedFromNumber
+              );
+
+              console.log(`Moved task to ${targetDay} in first available slot`);
+            } else {
+              alert(
+                `No empty slots available in ${targetDay}. Please free up a slot first.`
+              );
+            }
+          },
+
+          // Task Priority Methods
+          setTaskPriority(day, type, number, priority) {
+            this.dailyTasks[day][type][number].priority = priority;
+            this.updateTask(day, type, number);
+          },
+
+          getTaskPriority(day, type, number) {
+            return this.dailyTasks[day][type][number].priority || "none";
+          },
+
+          // Enhanced keyboard handling with more shortcuts
+          handleKeyDown(event) {
+            // Only handle if no input is focused
+            if (
+              document.activeElement.tagName === "INPUT" ||
+              document.activeElement.tagName === "TEXTAREA" ||
+              document.activeElement.tagName === "SELECT"
+            ) {
+              return;
+            }
+
+            // Handle Ctrl combinations
+            if (event.ctrlKey || event.metaKey) {
+              switch (event.key) {
+                case "d":
+                  event.preventDefault();
+                  this.duplicateYesterday();
+                  break;
+                case "a":
+                  event.preventDefault();
+                  this.markDayComplete(this.getCurrentDay());
+                  break;
+                case "x":
+                  event.preventDefault();
+                  this.clearDay(this.getCurrentDay());
+                  break;
+                case "/":
+                  event.preventDefault();
+                  this.showKeyboardHelp();
+                  break;
+              }
+              return;
+            }
+
+            switch (event.key) {
+              case "j": // Next day
+                event.preventDefault();
+                this.navigateDay(1);
+                break;
+              case "k": // Previous day
+                event.preventDefault();
+                this.navigateDay(-1);
+                break;
+              case " ": // Toggle current day
+                event.preventDefault();
+                this.toggleCurrentDay();
+                break;
+              case "n": // New task in current day
+                event.preventDefault();
+                this.focusNewTask();
+                break;
+              case "h": // Show help
+                event.preventDefault();
+                this.showKeyboardHelp();
+                break;
+              case "1": // Expand Sunday
+                event.preventDefault();
+                this.expandSpecificDay(0);
+                break;
+              case "2": // Expand Monday
+                event.preventDefault();
+                this.expandSpecificDay(1);
+                break;
+              case "3": // Expand Tuesday
+                event.preventDefault();
+                this.expandSpecificDay(2);
+                break;
+              case "4": // Expand Wednesday
+                event.preventDefault();
+                this.expandSpecificDay(3);
+                break;
+              case "5": // Expand Thursday
+                event.preventDefault();
+                this.expandSpecificDay(4);
+                break;
+              case "6": // Expand Friday
+                event.preventDefault();
+                this.expandSpecificDay(5);
+                break;
+              case "7": // Expand Saturday
+                event.preventDefault();
+                this.expandSpecificDay(6);
+                break;
+            }
+          },
+
+          navigateDay(direction) {
+            const currentIndex = this.days.findIndex(
+              (day) => this.expandedDays[day]
+            );
+            let nextIndex = currentIndex + direction;
+
+            if (nextIndex < 0) nextIndex = this.days.length - 1;
+            if (nextIndex >= this.days.length) nextIndex = 0;
+
+            // Collapse current, expand next
+            if (currentIndex >= 0) {
+              this.expandedDays[this.days[currentIndex]] = false;
+            }
+            this.expandedDays[this.days[nextIndex]] = true;
+          },
+
+          toggleCurrentDay() {
+            const currentDay = this.days.find((day) => this.expandedDays[day]);
+            if (currentDay) {
+              this.expandedDays[currentDay] = !this.expandedDays[currentDay];
+            } else {
+              // If no day is expanded, expand Sunday
+              this.expandedDays[this.days[0]] = true;
+            }
+          },
+
+          focusNewTask() {
+            const currentDay = this.days.find((day) => this.expandedDays[day]);
+            if (currentDay) {
+              // Find first empty task input and focus it
+              this.$nextTick(() => {
+                const dayElement = document.querySelector(
+                  `[data-day="${currentDay}"]`
+                );
+                if (dayElement) {
+                  const emptyInput = dayElement.querySelector(
+                    ".task-input:not([value])"
+                  );
+                  if (emptyInput) emptyInput.focus();
+                }
+              });
+            }
+          },
+
+          expandSpecificDay(dayIndex) {
+            // Collapse all days first
+            this.days.forEach((day) => {
+              this.expandedDays[day] = false;
+            });
+            // Expand specific day
+            this.expandedDays[this.days[dayIndex]] = true;
+          },
+
+          // Quick Actions
+          duplicateYesterday() {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            const todayDay = this.days[today.getDay()];
+            const yesterdayDay = this.days[yesterday.getDay()];
+
+            // Copy tasks from yesterday to today
+            this.dailyTasks[todayDay] = JSON.parse(
+              JSON.stringify(this.dailyTasks[yesterdayDay])
+            );
+
+            // Reset all statuses to pending
+            Object.keys(this.dailyTasks[todayDay]).forEach((type) => {
+              Object.keys(this.dailyTasks[todayDay][type]).forEach((number) => {
+                this.dailyTasks[todayDay][type][number].status = "pending";
+              });
+            });
+
+            // Save all tasks
+            Object.keys(this.dailyTasks[todayDay]).forEach(async (type) => {
+              Object.keys(this.dailyTasks[todayDay][type]).forEach(
+                async (number) => {
+                  await this.updateTask(todayDay, type, number);
+                }
+              );
+            });
+
+            console.log(`Duplicated ${yesterdayDay} schedule to ${todayDay}`);
+          },
+
+          async markDayComplete(day) {
+            const tasks = this.dailyTasks[day];
+
+            Object.keys(tasks).forEach((type) => {
+              Object.keys(tasks[type]).forEach(async (number) => {
+                if (
+                  tasks[type][number].description &&
+                  tasks[type][number].status === "pending"
+                ) {
+                  tasks[type][number].status = "completed";
+                  await this.updateTask(day, type, number);
+                }
+              });
+            });
+
+            console.log(`Marked all tasks complete for ${day}`);
+          },
+
+          clearDay(day) {
+            if (
+              confirm(`Are you sure you want to clear all tasks for ${day}?`)
+            ) {
+              const tasks = this.dailyTasks[day];
+
+              Object.keys(tasks).forEach((type) => {
+                Object.keys(tasks[type]).forEach(async (number) => {
+                  tasks[type][number] = { description: "", status: "pending" };
+                  await this.updateTask(day, type, number);
+                });
+              });
+
+              console.log(`Cleared all tasks for ${day}`);
+            }
+          },
+
+          showKeyboardHelp() {
+            alert(`Keyboard Shortcuts:
+        
+Navigation:
+• J - Next day
+• K - Previous day 
+• Space - Toggle current day
+
+Actions:
+• N - Focus new task in current day
+• Ctrl+D - Duplicate yesterday's tasks
+• Ctrl+A - Mark all today's tasks complete
+• Ctrl+X - Clear today's tasks
+
+Drag & Drop:
+• Drag tasks between slots or days
+• Hold and drag to reorder
+        `);
+          },
+
+          // Task analytics methods
+          getWeeklyCompletionRate() {
+            let totalTasks = 0;
+            let completedTasks = 0;
+
+            this.days.forEach((day) => {
+              const stats = this.getDayStats(day);
+              totalTasks +=
+                stats.completed +
+                stats.deferred +
+                stats.cancelled +
+                stats.incomplete;
+              completedTasks += stats.completed;
+            });
+
+            return totalTasks > 0
+              ? Math.round((completedTasks / totalTasks) * 100)
+              : 0;
+          },
+
+          getMostProductiveDay() {
+            let bestDay = "";
+            let bestScore = 0;
+
+            this.days.forEach((day) => {
+              const stats = this.getDayStats(day);
+              const score =
+                stats.completed * 2 +
+                stats.deferred * 1 -
+                stats.cancelled * 0.5;
+              if (score > bestScore) {
+                bestScore = score;
+                bestDay = day;
+              }
+            });
+
+            return bestDay || "No data";
+          },
+
+          getHighPriorityTasksRemaining() {
+            return this.getIncompleteTasksForWeek().filter(
+              (task) => task.priority === "high"
+            ).length;
+          },
+
+          // Time block enhancements
+          findEmptyTimeSlots(day) {
+            const emptySlots = [];
+            this.timeRange.forEach((hour) => {
+              if (!this.getTimeBlock(day, hour).description) {
+                emptySlots.push(hour);
+              }
+            });
+            return emptySlots;
+          },
+
+          // Auto-schedule a task in the next available time slot
+          autoScheduleTask(day, taskDescription, duration = 1) {
+            const emptySlots = this.findEmptyTimeSlots(day);
+
+            if (emptySlots.length >= duration) {
+              // Schedule in consecutive slots if possible
+              for (let i = 0; i <= emptySlots.length - duration; i++) {
+                const startSlot = emptySlots[i];
+                let canSchedule = true;
+
+                // Check if we have consecutive slots
+                for (let j = 1; j < duration; j++) {
+                  if (emptySlots[i + j] !== startSlot + j) {
+                    canSchedule = false;
+                    break;
+                  }
+                }
+
+                if (canSchedule) {
+                  // Schedule the task
+                  for (let j = 0; j < duration; j++) {
+                    this.timeBlocks[day][startSlot + j].description =
+                      duration > 1
+                        ? `${taskDescription} (${j + 1}/${duration})`
+                        : taskDescription;
+                    this.updateTimeBlock(day, startSlot + j);
+                  }
+                  return true;
+                }
+              }
+            }
+
+            return false; // Couldn't schedule
+          },
+
+          // Smart suggestions
+          suggestTaskScheduling(day) {
+            const incompleteTasks = [];
+            const dayTasks = this.dailyTasks[day];
+
+            Object.keys(dayTasks).forEach((type) => {
+              Object.keys(dayTasks[type]).forEach((number) => {
+                const task = dayTasks[type][number];
+                if (task.description && task.status === "pending") {
+                  incompleteTasks.push({
+                    description: task.description,
+                    priority: task.priority,
+                    type,
+                    number,
+                  });
+                }
+              });
+            });
+
+            // Sort by priority
+            incompleteTasks.sort((a, b) => {
+              const priorityOrder = { high: 3, medium: 2, low: 1, none: 0 };
+              return priorityOrder[b.priority] - priorityOrder[a.priority];
+            });
+
+            const emptySlots = this.findEmptyTimeSlots(day);
+            const suggestions = [];
+
+            incompleteTasks.forEach((task, index) => {
+              if (index < emptySlots.length) {
+                suggestions.push({
+                  task: task.description,
+                  timeSlot: this.formatHour(emptySlots[index]),
+                  priority: task.priority,
+                });
+              }
+            });
+
+            return suggestions;
+          },
+
+          // Productivity insights
+          getProductivityInsights() {
+            const insights = {
+              weeklyCompletion: this.getWeeklyCompletionRate(),
+              mostProductiveDay: this.getMostProductiveDay(),
+              highPriorityRemaining: this.getHighPriorityTasksRemaining(),
+              totalTasksThisWeek: 0,
+              avgTasksPerDay: 0,
+            };
+
+            let totalTasks = 0;
+            this.days.forEach((day) => {
+              const stats = this.getDayStats(day);
+              totalTasks +=
+                stats.completed +
+                stats.deferred +
+                stats.cancelled +
+                stats.incomplete;
+            });
+
+            insights.totalTasksThisWeek = totalTasks;
+            insights.avgTasksPerDay = Math.round(totalTasks / 7);
+
+            return insights;
+          },
+        },
+
+        mounted() {
+          // Check for existing auth
+          const token = localStorage.getItem("token");
+          const user = localStorage.getItem("user");
+
+          if (token && user) {
+            this.token = token;
+            this.user = JSON.parse(user);
+            this.isAuthenticated = true;
+            axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+            this.initializePlanner();
+          }
+
+          // Load theme preference
+          const savedTheme = localStorage.getItem("theme") || "light";
+          this.theme = savedTheme;
+          document.documentElement.setAttribute("data-theme", savedTheme);
+          document.addEventListener("keydown", this.handleKeyDown);
+        },
+        beforeUnmount() {
+          document.removeEventListener("keydown", this.handleKeyDown);
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>
